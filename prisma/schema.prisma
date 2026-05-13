@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Restaurant {
+  id          String    @id @default(uuid())
+  name        String
+  address     String
+  ownerName   String
+  email       String    @unique
+  phone       String
+  logo        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  tables      Table[]
+  menuItems   MenuItem[]
+  orders      Order[]
+  users       User[]
+  feedbacks   Feedback[]
+  analytics   Analytics[]
+  notifications Notification[]
+  
+  @@map("restaurants")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String
+  password      String
+  role          String    @default("STAFF")
+  restaurantId  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  
+  @@map("users")
+}
+
+model Table {
+  id            String    @id @default(uuid())
+  restaurantId  String
+  tableNumber   String
+  qrCode        String    @unique
+  capacity      Int       @default(4)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orders        Order[]
+  
+  @@unique([restaurantId, tableNumber])
+  @@map("tables")
+}
+
+model MenuItem {
+  id            String    @id @default(uuid())
+  restaurantId  String
+  name          String
+  description   String?
+  price         Float
+  category      String
+  image         String?
+  isAvailable   Boolean   @default(true)
+  isVeg         Boolean   @default(true)
+  preparationTime Int     @default(15)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems    OrderItem[]
+  
+  @@map("menu_items")
+}
+
+model Order {
+  id            String        @id @default(uuid())
+  tableId       String
+  restaurantId  String
+  totalAmount   Float
+  status        String        @default("RECEIVED")
+  paymentStatus String        @default("PENDING")
+  specialInstructions String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  
+  table         Table         @relation(fields: [tableId], references: [id])
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  orderItems    OrderItem[]
+  payment       Payment?
+  feedback      Feedback?
+  
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String    @id @default(uuid())
+  orderId       String
+  menuItemId    String
+  quantity      Int
+  unitPrice     Float
+  subtotal      Float
+  
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem      MenuItem  @relation(fields: [menuItemId], references: [id])
+  
+  @@map("order_items")
+}
+
+model Payment {
+  id            String        @id @default(uuid())
+  orderId       String        @unique
+  method        String
+  transactionId String?
+  amount        Float
+  status        String        @default("PENDING")
+  upiId         String?
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@map("payments")
+}
+
+model Feedback {
+  id            String    @id @default(uuid())
+  orderId       String    @unique
+  restaurantId  String
+  rating        Int
+  review        String?
+  sentiment     String    @default("NEUTRAL")
+  createdAt     DateTime  @default(now())
+  
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  restaurant    Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  
+  @@map("feedbacks")
+}
+
+model Analytics {
+  id              String    @id @default(uuid())
+  restaurantId    String
+  date            DateTime
+  totalSales      Float
+  totalOrders     Int
+  avgOrderValue   Float
+  popularItemId   String?
+  peakHour        Int?
+  
+  restaurant      Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  
+  @@unique([restaurantId, date])
+  @@map("analytics")
+}
+
+model Notification {
+  id            String            @id @default(uuid())
+  restaurantId  String
+  type          String
+  title         String
+  message       String
+  isRead        Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  
+  restaurant    Restaurant        @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  
+  @@map("notifications")
+}
+
+model Recommendation {
+  id              String    @id @default(uuid())
+  baseItemId      String
+  recommendedItemId String
+  confidence      Float
+  frequency       Int
+  
+  @@unique([baseItemId, recommendedItemId])
+  @@map("recommendations")
+}
+
+model Prediction {
+  id            String          @id @default(uuid())
+  restaurantId  String
+  type          String
+  date          DateTime
+  predictedValue Float
+  confidence    Float
+  actualValue   Float?
+  createdAt     DateTime        @default(now())
+  
+  @@map("predictions")
+}
