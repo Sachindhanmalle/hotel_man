@@ -28,3 +28,7 @@ next-env.d.ts
 # local databases
 *.db
 *.db-journal
+
+# accidental nested repo artifacts
+hotel_man/
+hotel_man/.git.bak-*/
