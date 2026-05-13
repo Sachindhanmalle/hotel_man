@@ -184,7 +184,7 @@ export default function AdminDashboard() {
             >
               <item.icon className="w-5 h-5" />
               <span className="flex-1 text-left">{item.label}</span>
-              {(item.badge ?? 0) > 0 && (
+              {item.badge && item.badge > 0 && (
                 <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full">
                   {item.badge}
                 </span>
